@@ -1,0 +1,15 @@
+name: haml
+version: 0.1.0
+
+crystal: ">= 1.14.0, < 2.0.0"
+license: MIT
+
+authors:
+  - Michael F. Robbins <mrobbins@alum.mit.edu>
+
+description: |
+  HAML templating engine for Crystal
+
+targets:
+  hamlc:
+    main: src/haml/cli.cr
