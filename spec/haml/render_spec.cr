@@ -351,8 +351,22 @@ describe "compiled Haml rendering" do
 
   it "trailing Crystal comments" do
     name = "Mike"
+    values = [1, 2, 3]
     actual = Haml.render "spec/fixtures/render/061.haml"
-    actual.should eq("<p>Mike</p>\n")
+    actual.should eq("<p>Mike</p>\n4\n")
+    values.should be_empty
+  end
+
+  it "trailing comments within multiline output and silent expressions" do
+    values = [1, 2]
+    actual = Haml.render "spec/fixtures/render/091.haml"
+    actual.should eq("4\n<p>after</p>\n")
+    values.should eq([1, 2, 3, 4])
+  end
+
+  it "trailing comments within multiline attribute hashes and values" do
+    actual = Haml.render "spec/fixtures/render/092.haml"
+    actual.should eq("<p title=\"A &amp; B\" class=\"one two\" id=\"kept\">Hello</p>\n<p>after</p>\n")
   end
 
   it "inner whitespace control" do

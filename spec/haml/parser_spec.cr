@@ -38,6 +38,21 @@ describe Haml::Parser do
     parse_haml(source).children.size.should eq(1)
   end
 
+  it "ignores spaced code comments without parsing their contents" do
+    {"- # I am a comment", "-   #", "-\t# malformed ( \" |"}.each do |comment|
+      parse_haml(comment).children.should be_empty
+      document = parse_haml("#{comment}\n%p Kept")
+      document.children.size.should eq(1)
+      document.children.first.location.line.should eq(2)
+    end
+  end
+
+  it "does not discard indented content beneath a spaced code comment" do
+    expect_raises(Haml::SyntaxError, /unexpected indentation/) do
+      parse_haml("- # comment\n  %p nested")
+    end
+  end
+
   it "keeps raw filter indentation and blank lines" do
     filter = parse_haml(":plain\n  one\n     two\n\n%p next").children.first.as(Haml::AST::Filter)
     filter.text.should eq("one\n   two\n\n")

@@ -79,6 +79,11 @@ module Haml
           skip_silent_comment(indent)
           next
         end
+        # A spaced code comment ignores only this line. Unlike -#, it does
+        # not discard a subtree or interrupt attachment of a following branch.
+        if text.starts_with?('-') && text[1..].lstrip.starts_with?('#')
+          next
+        end
         if text.starts_with?(':')
           name = text[1..].strip
           unless FILTERS.includes?(name)

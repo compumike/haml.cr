@@ -302,7 +302,7 @@
   {
     "id": "061",
     "name": "trailing Crystal comments",
-    "expected_html": "<p>Mike</p>\n"
+    "expected_html": "<p>Mike</p>\n4\n"
   },
   {
     "id": "062",
@@ -448,5 +448,15 @@
     "id": "090",
     "name": "inner trim affects separators on every loop iteration",
     "expected_html": "<p><b>A</b><b>B</b></p>\n"
+  },
+  {
+    "id": "091",
+    "name": "trailing comments within multiline output and silent expressions",
+    "expected_html": "4\n<p>after</p>\n"
+  },
+  {
+    "id": "092",
+    "name": "trailing comments within multiline attribute hashes and values",
+    "expected_html": "<p title=\"A &amp; B\" class=\"one two\" id=\"kept\">Hello</p>\n<p>after</p>\n"
   }
 ]
