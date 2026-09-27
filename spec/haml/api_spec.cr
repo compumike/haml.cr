@@ -43,6 +43,20 @@ describe "Haml public macros" do
     HamlSpecGreeting.new("<Reader>").to_s.should eq("<p>&lt;Reader&gt;</p>\n")
   end
 
+  it "embeds a partial exactly once through an output expression returning nil" do
+    io = IO::Memory.new
+    name = "<Reader>"
+    Haml.embed("spec/fixtures/nested/output.haml", io)
+    io.to_s.should eq("<p>before</p>\n<span>inner &lt;Reader&gt;</span>\n\n<p>after</p>\n")
+  end
+
+  it "embeds a partial exactly once through a silent statement" do
+    io = IO::Memory.new
+    name = "<Reader>"
+    Haml.embed("spec/fixtures/nested/silent.haml", io)
+    io.to_s.should eq("<p>before</p>\n<span>inner &lt;Reader&gt;</span>\n<p>after</p>\n")
+  end
+
   it "does not overwrite common application local-variable names" do
     io = "application io"
     __haml_io = "application long name"
