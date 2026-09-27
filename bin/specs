@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+cd "$(dirname "$0")"/..
+
+crystal --version
+
+echo ""
+exec crystal spec --verbose --error-trace "$@"

@@ -1,7 +1,9 @@
 /design_docs/
 /local_tmp/
 
-/docs/
+/docs/*
+!/docs/SYNTAX.md
+!/docs/VALIDATION.md
 /lib/
 /out/
 /.shards/
@@ -10,3 +12,6 @@
 # Libraries don't need dependency lock
 # Dependencies will be locked in applications that use them
 /shard.lock
+
+# Keep native build artifacts local.
+/.crystal-cache/

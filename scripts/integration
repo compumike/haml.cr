@@ -1,0 +1,70 @@
+#!/bin/sh
+# Opt-in subprocess tests. Unlike --check, these exercise native compilation.
+# They deliberately do not run as part of every `crystal spec` invocation.
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+CRYSTAL=$(command -v crystal) || { echo 'Crystal is required' >&2; exit 127; }
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/haml-integration.XXXXXX")
+trap 'rm -rf "$TMP"' EXIT HUP INT TERM
+# Use the installed compiler's standard library search path, not a guessed path.
+CRYSTAL_PATH="$ROOT/src:${CRYSTAL_PATH:-$("$CRYSTAL" env CRYSTAL_PATH)}"
+export CRYSTAL_PATH
+fail() { echo "FAIL: $*" >&2; exit 1; }
+
+"$CRYSTAL" build src/haml/cli.cr -o "$TMP/hamlc"
+printf '%%p= name\n' > "$TMP/view.haml"
+"$TMP/hamlc" --method=render_demo --params='name : String' --io=io --no-locations -o "$TMP/generated.cr" "$TMP/view.haml"
+cat > "$TMP/generated_app.cr" <<'CRYSTAL'
+require "haml"
+require "./generated"
+render_demo(STDOUT, "<Reader>")
+CRYSTAL
+"$CRYSTAL" build "$TMP/generated_app.cr" -o "$TMP/generated_app"
+"$TMP/generated_app" > "$TMP/actual"
+printf '<p>&lt;Reader&gt;</p>\n' > "$TMP/expected"
+cmp "$TMP/actual" "$TMP/expected" || fail 'CLI generation did not produce expected HTML'
+echo 'PASS: generated render method compiles and renders'
+
+# No-op generation must not rewrite an unchanged output file.
+touch -t 200001010000 "$TMP/generated.cr"
+ls -ld "$TMP/generated.cr" > "$TMP/stat-before"
+"$TMP/hamlc" --method=render_demo --params='name : String' --io=io --no-locations -o "$TMP/generated.cr" "$TMP/view.haml"
+ls -ld "$TMP/generated.cr" > "$TMP/stat-after"
+cmp "$TMP/stat-before" "$TMP/stat-after" || fail 'unchanged generation touched the output'
+echo 'PASS: unchanged output preserves mtime'
+
+# --check only translates. Application names are intentionally unresolved here.
+"$TMP/hamlc" --check "$TMP/view.haml"
+printf '  %%p invalid\n' > "$TMP/bad.haml"
+if "$TMP/hamlc" --check "$TMP/bad.haml" > "$TMP/stdout" 2> "$TMP/stderr"; then
+  fail 'invalid Haml was accepted'
+fi
+[ ! -s "$TMP/stdout" ] || fail 'diagnostic leaked to stdout'
+grep 'bad.haml:1:' "$TMP/stderr" >/dev/null || fail 'Haml diagnostic lost its filename/line'
+echo 'PASS: Haml failure is located and sent to stderr'
+
+cat > "$TMP/macro_app.cr" <<'CRYSTAL'
+require "haml"
+name = "<Reader>"
+print Haml.render "#{__DIR__}/view.haml"
+CRYSTAL
+# This is intentionally a foreign working directory: processor discovery must
+# follow the shard's own __DIR__, while the template uses an absolute filename.
+(cd "$TMP" && "$CRYSTAL" build macro_app.cr -o macro_app)
+"$TMP/macro_app" > "$TMP/actual"
+cmp "$TMP/actual" "$TMP/expected" || fail 'relocated macro render failed'
+echo 'PASS: shard and template path resolution outside the checkout'
+
+# Template syntax is valid, but an embedded Crystal method is misspelled.
+printf '%%div\n  %%p= name.this_method_does_not_exist\n' > "$TMP/view.haml"
+if "$CRYSTAL" build "$TMP/macro_app.cr" -o "$TMP/should-not-exist" > "$TMP/stdout" 2> "$TMP/stderr"; then
+  fail 'undefined template method unexpectedly compiled'
+fi
+cat "$TMP/stdout" "$TMP/stderr" > "$TMP/diagnostic"
+grep 'view.haml:2:' "$TMP/diagnostic" >/dev/null || {
+  cat "$TMP/diagnostic" >&2
+  fail 'native type error was not mapped to the template line'
+}
+echo 'PASS: native Crystal error maps to the Haml file'
+echo 'All integration checks passed.'

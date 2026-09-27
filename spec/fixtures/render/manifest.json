@@ -1,0 +1,452 @@
+[
+  {
+    "id": "001",
+    "name": "empty template",
+    "expected_html": ""
+  },
+  {
+    "id": "002",
+    "name": "blank lines",
+    "expected_html": ""
+  },
+  {
+    "id": "003",
+    "name": "comment-only template",
+    "expected_html": ""
+  },
+  {
+    "id": "004",
+    "name": "a simple tag",
+    "expected_html": "<p>Hello</p>\n"
+  },
+  {
+    "id": "005",
+    "name": "nested tags",
+    "expected_html": "<ul>\n<li>One</li>\n<li>Two</li>\n</ul>\n"
+  },
+  {
+    "id": "006",
+    "name": "plain text and authored entities",
+    "expected_html": "Hello <b>world</b> &copy;\n"
+  },
+  {
+    "id": "007",
+    "name": "implicit div with classes and id",
+    "expected_html": "<div class=\"one two\" id=\"box\"></div>\n"
+  },
+  {
+    "id": "008",
+    "name": "custom elements",
+    "expected_html": "<my-widget class=\"foo\"></my-widget>\n"
+  },
+  {
+    "id": "009",
+    "name": "SVG names and explicit empty nonvoid tags",
+    "expected_html": "<svg>\n<path></path>\n</svg>\n"
+  },
+  {
+    "id": "010",
+    "name": "HTML5 doctype",
+    "expected_html": "<!DOCTYPE html>\n<html></html>\n"
+  },
+  {
+    "id": "011",
+    "name": "explicit HTML5 doctype",
+    "expected_html": "<!DOCTYPE html>\n"
+  },
+  {
+    "id": "012",
+    "name": "void tags",
+    "expected_html": "<br>\n<img src=\"x.png\">\n<input>\n"
+  },
+  {
+    "id": "013",
+    "name": "explicit empty nonvoid HTML",
+    "expected_html": "<div></div>\n"
+  },
+  {
+    "id": "014",
+    "name": "escaped expression output",
+    "expected_html": "<p>&lt;Mike &amp; Co&gt;</p>\n"
+  },
+  {
+    "id": "015",
+    "name": "raw expression output",
+    "expected_html": "<div><b>x</b></div>\n"
+  },
+  {
+    "id": "016",
+    "name": "markup is escaped by default",
+    "expected_html": "<div>&lt;b&gt;x&lt;/b&gt;</div>\n"
+  },
+  {
+    "id": "017",
+    "name": "explicit escaping of markup",
+    "expected_html": "<div>&lt;b&gt;x&lt;/b&gt;</div>\n"
+  },
+  {
+    "id": "018",
+    "name": "nil output",
+    "expected_html": "<p></p>\n"
+  },
+  {
+    "id": "019",
+    "name": "numeric output",
+    "expected_html": "123\n"
+  },
+  {
+    "id": "020",
+    "name": "interpolation without escaping authored markup",
+    "expected_html": "<p>Hello <em>&lt;Mike&gt;</em> &copy;</p>\n"
+  },
+  {
+    "id": "021",
+    "name": "escaped interpolation",
+    "expected_html": "<p>Hello #{name}</p>\n"
+  },
+  {
+    "id": "022",
+    "name": "interpolation at the start of a line",
+    "expected_html": "&lt;Mike&gt; says hello\n"
+  },
+  {
+    "id": "023",
+    "name": "Haml double equals is text interpolation",
+    "expected_html": "hello &lt;Mike&gt;\n"
+  },
+  {
+    "id": "024",
+    "name": "inline double equals",
+    "expected_html": "<p>hello &lt;Mike&gt;</p>\n"
+  },
+  {
+    "id": "025",
+    "name": "forced text escaping",
+    "expected_html": "&lt;b&gt;&lt;Mike&gt;&lt;/b&gt;\n"
+  },
+  {
+    "id": "026",
+    "name": "raw interpolation",
+    "expected_html": "<b><Mike></b>\n"
+  },
+  {
+    "id": "027",
+    "name": "literal leading special characters",
+    "expected_html": "%not_a_tag\n"
+  },
+  {
+    "id": "028",
+    "name": "hash-style attributes",
+    "expected_html": "<a href=\"/a?x=1&amp;y=2\" title=\"&lt;Mike&gt;\">Go</a>\n"
+  },
+  {
+    "id": "029",
+    "name": "legacy static attribute keys",
+    "expected_html": "<p title=\"x\" data-x=\"7\"></p>\n"
+  },
+  {
+    "id": "030",
+    "name": "HTML-style strings and a local variable",
+    "expected_html": "<a href=\"/home\" title=\"Hello\">Go</a>\n"
+  },
+  {
+    "id": "031",
+    "name": "single-quoted HTML strings",
+    "expected_html": "<p title=\"He said &quot;go&quot;\"></p>\n"
+  },
+  {
+    "id": "032",
+    "name": "HTML-style interpolated attributes escape once",
+    "expected_html": "<p title=\"Hi &lt;Mike&gt; &amp; more\"></p>\n"
+  },
+  {
+    "id": "033",
+    "name": "parenthesized expressions in HTML attributes",
+    "expected_html": "<p title=\"Hello Mike\"></p>\n"
+  },
+  {
+    "id": "034",
+    "name": "boolean and nil attributes",
+    "expected_html": "<input checked>\n"
+  },
+  {
+    "id": "035",
+    "name": "bare HTML boolean attribute",
+    "expected_html": "<input disabled>\n"
+  },
+  {
+    "id": "036",
+    "name": "ordinary false attributes",
+    "expected_html": "<input title=\"false\" value=\"true\">\n"
+  },
+  {
+    "id": "037",
+    "name": "class arrays and merging",
+    "expected_html": "<p class=\"base wide active\"></p>\n"
+  },
+  {
+    "id": "038",
+    "name": "ID merging",
+    "expected_html": "<p id=\"item_7_detail\"></p>\n"
+  },
+  {
+    "id": "039",
+    "name": "data and ARIA named tuples",
+    "expected_html": "<p data-item-id=\"7\" data-nested-ready=\"false\" aria-hidden=\"false\"></p>\n"
+  },
+  {
+    "id": "040",
+    "name": "attribute splats",
+    "expected_html": "<p class=\"base extra\" title=\"new\"></p>\n"
+  },
+  {
+    "id": "041",
+    "name": "attribute delimiters are always escaped",
+    "expected_html": "<p title=\"&quot; onclick=&quot;evil\"></p>\n"
+  },
+  {
+    "id": "042",
+    "name": "multiline attribute groups",
+    "expected_html": "<p title=\"Mike\" class=\"wide active\">Hello</p>\n"
+  },
+  {
+    "id": "043",
+    "name": "multiline output expression",
+    "expected_html": "3\n"
+  },
+  {
+    "id": "044",
+    "name": "commas and braces inside expressions",
+    "expected_html": "<p title=\"a,b-}\"></p>\n"
+  },
+  {
+    "id": "045",
+    "name": "a slash regex inside an attribute",
+    "expected_html": "<p title=\"[}]\"></p>\n"
+  },
+  {
+    "id": "046",
+    "name": "a percent regex inside an attribute",
+    "expected_html": "<p title=\"[},]\"></p>\n"
+  },
+  {
+    "id": "047",
+    "name": "division inside an attribute",
+    "expected_html": "<p title=\"3.0\"></p>\n"
+  },
+  {
+    "id": "048",
+    "name": "integer division inside an attribute",
+    "expected_html": "<p title=\"3\"></p>\n"
+  },
+  {
+    "id": "049",
+    "name": "Crystal interpolation in an output expression",
+    "expected_html": "Hello &lt;Mike&gt;\n"
+  },
+  {
+    "id": "050",
+    "name": "if elsif else",
+    "expected_html": "<p>two</p>\n"
+  },
+  {
+    "id": "051",
+    "name": "unless else",
+    "expected_html": "<p>on</p>\n"
+  },
+  {
+    "id": "052",
+    "name": "a silent local assignment",
+    "expected_html": "<p>Mike</p>\n"
+  },
+  {
+    "id": "053",
+    "name": "nested control flow",
+    "expected_html": "<p>inner</p>\n"
+  },
+  {
+    "id": "054",
+    "name": "iteration",
+    "expected_html": "<ul>\n<li>A</li>\n<li>B</li>\n</ul>\n"
+  },
+  {
+    "id": "055",
+    "name": "while",
+    "expected_html": "<p>0</p>\n<p>1</p>\n"
+  },
+  {
+    "id": "056",
+    "name": "until",
+    "expected_html": "<p>0</p>\n<p>1</p>\n"
+  },
+  {
+    "id": "057",
+    "name": "next in a loop",
+    "expected_html": "<p>1</p>\n<p>3</p>\n"
+  },
+  {
+    "id": "058",
+    "name": "sibling case branches",
+    "expected_html": "<p>two</p>\n"
+  },
+  {
+    "id": "059",
+    "name": "indented case branches",
+    "expected_html": "<p>other</p>\n"
+  },
+  {
+    "id": "060",
+    "name": "rescue and ensure",
+    "expected_html": "<p>boom</p>\n<p>done</p>\n"
+  },
+  {
+    "id": "061",
+    "name": "trailing Crystal comments",
+    "expected_html": "<p>Mike</p>\n"
+  },
+  {
+    "id": "062",
+    "name": "inner whitespace control",
+    "expected_html": "<p><b>x</b></p>\n"
+  },
+  {
+    "id": "063",
+    "name": "outer whitespace control",
+    "expected_html": "<span>a</span><span>b</span><span>c</span>\n"
+  },
+  {
+    "id": "064",
+    "name": "combined whitespace controls",
+    "expected_html": "<p><b>x</b></p>"
+  },
+  {
+    "id": "065",
+    "name": "runtime whitespace is never stripped",
+    "expected_html": "<p> x \n</p>\n"
+  },
+  {
+    "id": "066",
+    "name": "line preservation",
+    "expected_html": "a&#10;b\n"
+  },
+  {
+    "id": "067",
+    "name": "a static HTML comment",
+    "expected_html": "<!-- note -->\n"
+  },
+  {
+    "id": "068",
+    "name": "nested static HTML comment",
+    "expected_html": "<!--\n<p>old</p>\n-->\n"
+  },
+  {
+    "id": "069",
+    "name": "a plain filter",
+    "expected_html": "one\n  two\n"
+  },
+  {
+    "id": "070",
+    "name": "an escaped filter",
+    "expected_html": "&lt;b&gt;&lt;Mike&gt;&lt;/b&gt;\n"
+  },
+  {
+    "id": "071",
+    "name": "a preserve filter",
+    "expected_html": "a&#10;b&#10;\n"
+  },
+  {
+    "id": "072",
+    "name": "a CSS filter",
+    "expected_html": "<style>\na { color: red; }\n</style>\n"
+  },
+  {
+    "id": "073",
+    "name": "a JS filter with deliberately literal interpolation syntax",
+    "expected_html": "<script>\nconst s = \"#{not_a_crystal_variable}\";\n</script>\n"
+  },
+  {
+    "id": "074",
+    "name": "an output-capture helper",
+    "expected_html": "<section><p>Hello</p>\n</section>\n"
+  },
+  {
+    "id": "075",
+    "name": "a capture helper yielding a value",
+    "expected_html": "<section><p>Reader</p>\n</section>\n"
+  },
+  {
+    "id": "076",
+    "name": "inline tag capture",
+    "expected_html": "<div><section><p>Hello</p>\n</section></div>\n"
+  },
+  {
+    "id": "077",
+    "name": "single evaluation of an attribute",
+    "expected_html": "<p title=\"1\"></p>\n"
+  },
+  {
+    "id": "078",
+    "name": "single evaluation of output",
+    "expected_html": "1\n"
+  },
+  {
+    "id": "079",
+    "name": "single evaluation of interpolation",
+    "expected_html": "1\n"
+  },
+  {
+    "id": "080",
+    "name": "Unicode text and dynamic content",
+    "expected_html": "<p>Café 東京</p>\n"
+  },
+  {
+    "id": "081",
+    "name": "leading comments on an attribute value",
+    "expected_html": "<p title=\"Mike\"></p>\n"
+  },
+  {
+    "id": "082",
+    "name": "Crystal percent q terminates even after a backslash",
+    "expected_html": "<p title=\"a\\\"></p>\n"
+  },
+  {
+    "id": "083",
+    "name": "interpolation in Crystal percent W arrays",
+    "expected_html": "a,&amp;,b\n"
+  },
+  {
+    "id": "084",
+    "name": "exhaustive case branches",
+    "expected_html": "<p>yes</p>\n"
+  },
+  {
+    "id": "085",
+    "name": "type narrowing inside Crystal conditionals",
+    "expected_html": "<p>4</p>\n"
+  },
+  {
+    "id": "086",
+    "name": "break from an iteration",
+    "expected_html": "<p>1</p>\n"
+  },
+  {
+    "id": "087",
+    "name": "nested captures use independent output buffers",
+    "expected_html": "<section><section><p>inner</p>\n</section>\n</section>\n"
+  },
+  {
+    "id": "088",
+    "name": "a silent comment does not detach else",
+    "expected_html": "<p>yes</p>\n"
+  },
+  {
+    "id": "089",
+    "name": "attribute side effects follow source order",
+    "expected_html": "<p title=\"1\" class=\"2\" id=\"3\"></p>\n"
+  },
+  {
+    "id": "090",
+    "name": "inner trim affects separators on every loop iteration",
+    "expected_html": "<p><b>A</b><b>B</b></p>\n"
+  }
+]

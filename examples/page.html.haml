@@ -1,0 +1,17 @@
+!!!
+%html(lang="en")
+  %head
+    %meta(charset="utf-8")
+    %title= @title
+  %body
+    %main#content
+      %h1= @title
+      %p This is authored <strong>markup</strong>; dynamic values are escaped.
+      %ul.items
+        - @items.each do |item|
+          %li{data: {item_id: item.id}, class: item.featured && "featured"}
+            %a{href: item.url}= item.name
+      - if @items.empty?
+        %p No items yet.
+      :css
+        .featured { font-weight: bold; }
