@@ -26,6 +26,10 @@ direnv exec . crystal version
 ASDF_CRYSTAL_VERSION=1.14.0 direnv exec . crystal version
 ```
 
+## Crystal code style
+
+Prefer explicit `def self.method_name` definitions for class or module methods instead of `extend self`.
+
 ## Comments and Typing
 
 For non-obvious sections of code, comments are helpful. It is especially a one or few sentence comment at the start of a new method if it isn't super clear what it's doing and why. Sometimes, on a section of code, it's useful to add a one-liner to help remind future agents or humans why that code is there.

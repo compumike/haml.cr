@@ -2,8 +2,6 @@ require "html"
 
 module Haml
   module Runtime
-    extend self
-
     VOID_TAGS = %w(area base br col embed hr img input link meta param source track wbr)
 
     # These are presence/absence attributes (including the commonly treated
@@ -11,24 +9,24 @@ module Haml
     # "until-found" state. data-* and aria-* are intentionally NOT in this list.
     BOOLEAN_ATTRIBUTES = %w(allowfullscreen async autofocus autoplay checked controls default defer disabled formnovalidate hidden inert ismap itemscope loop multiple muted nomodule novalidate open playsinline readonly required reversed selected)
 
-    def void_tag?(name : String) : Bool
+    def self.void_tag?(name : String) : Bool
       VOID_TAGS.includes?(name.downcase)
     end
 
-    def write_escaped(io : IO, value : T) : Nil forall T
+    def self.write_escaped(io : IO, value : T) : Nil forall T
       # Every dynamic value is escaped; only the template raw operator bypasses this.
       HTML.escape(value.to_s, io)
     end
 
-    def write_forced(io : IO, value : T) : Nil forall T
+    def self.write_forced(io : IO, value : T) : Nil forall T
       HTML.escape(value.to_s, io)
     end
 
-    def write_raw(io : IO, value : T) : Nil forall T
+    def self.write_raw(io : IO, value : T) : Nil forall T
       value.to_s(io)
     end
 
-    def write_preserved(io : IO, value : T) : Nil forall T
+    def self.write_preserved(io : IO, value : T) : Nil forall T
       # Preservation encodes newlines AFTER escaping, so &#10; is not escaped a
       # second time. An intermediate buffer is an explicit exception to the
       # streaming fast path; ordinary output does not allocate an escaped copy.
@@ -36,7 +34,7 @@ module Haml
       io << escaped.gsub("\r\n", "\n").gsub('\n', "&#10;")
     end
 
-    def valid_attribute_name?(name : String) : Bool
+    def self.valid_attribute_name?(name : String) : Bool
       # Escaping attribute names is not sufficient: whitespace could still start
       # another attribute. Reject forbidden syntax instead. This applies equally
       # to authored names and keys from a dynamic attribute splat.

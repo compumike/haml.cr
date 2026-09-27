@@ -2,10 +2,7 @@ require "./scanner"
 
 module Haml
   module Interpolation
-    extend self
-
-    def parse(text : String, location : Location, quoted : Bool = false,
-              max_depth : Int32 = 128) : Array(AST::Segment)
+    def self.parse(text : String, location : Location, quoted : Bool = false, max_depth : Int32 = 128) : Array(AST::Segment)
       # In ordinary text, literal markup stays literal; ONLY the interpolated
       # values are auto-escaped. Escaping the entire concatenated string would
       # break authored <em> markup and &copy; entities.
