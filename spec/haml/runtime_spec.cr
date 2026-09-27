@@ -1,41 +1,12 @@
 require "../spec_helper"
 
 describe Haml::Runtime do
-  it "escapes all five HTML metacharacters" do
-    output = String.build { |io| Haml::Runtime.write_escaped(io, %q|<&>"'|) }
-    output.should eq("&lt;&amp;&gt;&quot;&#39;")
-  end
-
-  it "stringifies numeric and nil output" do
-    String.build { |io| Haml::Runtime.write_escaped(io, 123) }.should eq("123")
-    String.build { |io| Haml::Runtime.write_escaped(io, nil) }.should eq("")
-  end
-
-  it "escapes markup in ordinary body values" do
-    String.build { |io| Haml::Runtime.write_escaped(io, "<b>x</b>") }.should eq("&lt;b&gt;x&lt;/b&gt;")
-  end
-
-  it "explicitly escapes markup" do
-    String.build { |io| Haml::Runtime.write_forced(io, "<b>x</b>") }.should eq("&lt;b&gt;x&lt;/b&gt;")
-  end
-
-  it "keeps raw output explicitly raw" do
-    String.build { |io| Haml::Runtime.write_raw(io, "<b>x</b>") }.should eq("<b>x</b>")
-  end
-
   it "preserves newlines after, not before, escaping" do
     String.build { |io| Haml::Runtime.write_preserved(io, "<x>\r\ny\n") }.should eq("&lt;x&gt;&#10;y&#10;")
   end
 
   it "escapes markup before preserving newlines" do
     String.build { |io| Haml::Runtime.write_preserved(io, "<b>\nx</b>") }.should eq("&lt;b&gt;&#10;x&lt;/b&gt;")
-  end
-
-  it "writes escaped output to an arbitrary write-only IO" do
-    io = HamlSpecWriteOnlyIO.new
-    Haml::Runtime.write_escaped(io, "a<b")
-    io.buffer.to_s.should eq("a&lt;b")
-    io.writes.should be > 0
   end
 end
 

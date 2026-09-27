@@ -199,10 +199,9 @@ module Haml
       parts.each do |part|
         if part.dynamic?
           flush(io_name)
-          helper = preserve ? "write_preserved" : writer_for(escape)
-          @code << "::Haml::Runtime." << helper << '(' << io_name << ", "
+          write_prefix(io_name, escape, preserve)
           expression(AST::Expression.new(part.text, part.location))
-          @code << ")\n"
+          write_suffix(io_name, escape, preserve)
         else
           text = escape_literal ? HTML.escape(part.text) : part.text
           text = text.gsub('\n', "&#10;") if preserve
@@ -211,18 +210,31 @@ module Haml
       end
     end
 
-    private def writer_for(escape : AST::Escape) : String
-      case escape
-      when .auto?  then "write_escaped"
-      when .force? then "write_forced"
-      else              "write_raw"
+    private def write_prefix(io_name : String, escape : AST::Escape, preserve : Bool) : Nil
+      # Ordinary values stream directly to the destination IO. Preservation
+      # still needs its helper because it replaces newlines after escaping.
+      if preserve
+        @code << "::Haml::Runtime.write_preserved(" << io_name << ", "
+      elsif escape.raw?
+        @code << '('
+      else
+        @code << "::HTML.escape("
+      end
+    end
+
+    private def write_suffix(io_name : String, escape : AST::Escape, preserve : Bool) : Nil
+      if preserve
+        @code << ")\n"
+      elsif escape.raw?
+        @code << ").to_s(" << io_name << ")\n"
+      else
+        @code << ".to_s, " << io_name << ")\n"
       end
     end
 
     private def output(node : AST::Output, io_name : String) : Nil
       flush(io_name)
-      helper = node.preserve? ? "write_preserved" : writer_for(node.escape)
-      @code << "::Haml::Runtime." << helper << '(' << io_name << ", "
+      write_prefix(io_name, node.escape, node.preserve?)
       if node.block?
         @code << "(\n"
         header(node.expression)
@@ -234,7 +246,7 @@ module Haml
       else
         expression(node.expression)
       end
-      @code << ")\n"
+      write_suffix(io_name, node.escape, node.preserve?)
     end
 
     private def control(node : AST::Code, io_name : String, newline : Bool) : Nil
@@ -256,7 +268,7 @@ module Haml
     end
 
     private def expression(value : AST::Expression) : Nil
-      @code << "#<loc:push>" if @options.source_locations
+      @code << "#<loc:push>\n" if @options.source_locations
       @code << '('
       location(value.location)
       @code << value.source
@@ -267,7 +279,9 @@ module Haml
     end
 
     private def header(value : AST::Expression) : Nil
-      @code << "#<loc:push>" if @options.source_locations
+      @code << "#<loc:push>\n" if @options.source_locations
+      # Keep the location directive beside the first source token. A newline
+      # between them advances Crystal's mapped line and resets its column.
       location(value.location)
       @code << value.source << '\n'
       @code << "#<loc:pop>\n" if @options.source_locations

@@ -13,24 +13,11 @@ module Haml
       VOID_TAGS.includes?(name.downcase)
     end
 
-    def self.write_escaped(io : IO, value : T) : Nil forall T
-      # Every dynamic value is escaped; only the template raw operator bypasses this.
-      HTML.escape(value.to_s, io)
-    end
-
-    def self.write_forced(io : IO, value : T) : Nil forall T
-      HTML.escape(value.to_s, io)
-    end
-
-    def self.write_raw(io : IO, value : T) : Nil forall T
-      value.to_s(io)
-    end
-
     def self.write_preserved(io : IO, value : T) : Nil forall T
       # Preservation encodes newlines AFTER escaping, so &#10; is not escaped a
       # second time. An intermediate buffer is an explicit exception to the
       # streaming fast path; ordinary output does not allocate an escaped copy.
-      escaped = String.build { |buffer| write_escaped(buffer, value) }
+      escaped = String.build { |buffer| HTML.escape(value.to_s, buffer) }
       io << escaped.gsub("\r\n", "\n").gsub('\n', "&#10;")
     end
 

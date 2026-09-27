@@ -20,12 +20,18 @@ describe "Haml source generation" do
 
   it "uses body escaping for ordinary output" do
     code = Haml.compile("%p= user.name")
-    code.should contain("::Haml::Runtime.write_escaped")
+    code.should contain("::HTML.escape(")
+    code.should contain(".to_s, __haml_io)")
   end
 
-  it "uses explicit raw and force-escape helpers" do
-    Haml.compile("!= markup").should contain("Runtime.write_raw")
-    Haml.compile("&= markup").should contain("Runtime.write_forced")
+  it "writes raw output directly and force-escapes output" do
+    Haml.compile("!= markup").should contain(").to_s(__haml_io)")
+    Haml.compile("&= markup").should contain("::HTML.escape(")
+  end
+
+  it "puts the header location stack marker on its own line" do
+    code = Haml.compile("- 2.times do |number|\n  = number", "view.haml")
+    code.should contain("#<loc:push>\n#<loc:\"view.haml\",1,3>2.times do |number|")
   end
 
   it "writes attribute expressions exactly once" do
