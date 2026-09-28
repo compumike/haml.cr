@@ -397,7 +397,7 @@
   {
     "id": "080",
     "name": "Unicode text and dynamic content",
-    "expected_html": "<p>Café 東京</p>\n"
+    "expected_html": "<p>Caf\u00e9 \u6771\u4eac</p>\n"
   },
   {
     "id": "081",
@@ -458,5 +458,20 @@
     "id": "092",
     "name": "trailing comments within multiline attribute hashes and values",
     "expected_html": "<p title=\"A &amp; B\" class=\"one two\" id=\"kept\">Hello</p>\n<p>after</p>\n"
+  },
+  {
+    "id": "093",
+    "name": "interpolates inside a raw multiline script output expression",
+    "expected_html": "<script>\n  var myVar = 1 < 2;\n</script>\n"
+  },
+  {
+    "id": "094",
+    "name": "interpolates and escapes inside a multiline script output expression",
+    "expected_html": "<script>\n  var myVar = 1 &lt; 2;\n</script>\n"
+  },
+  {
+    "id": "095",
+    "name": "interpolates inside a plain filter",
+    "expected_html": "var myVar = 1 &lt; 2;\n"
   }
 ]

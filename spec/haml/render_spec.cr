@@ -432,6 +432,24 @@ describe "compiled Haml rendering" do
     actual.should eq("<script>\nconst s = \"\#{not_a_crystal_variable}\";\n</script>\n")
   end
 
+  it "interpolates inside a raw multiline script output expression" do
+    value = "1 < 2"
+    actual = Haml.render "spec/fixtures/render/093.haml"
+    actual.should eq("<script>\n  var myVar = 1 < 2;\n</script>\n")
+  end
+
+  it "interpolates and escapes inside a multiline script output expression" do
+    value = "1 < 2"
+    actual = Haml.render "spec/fixtures/render/094.haml"
+    actual.should eq("<script>\n  var myVar = 1 &lt; 2;\n</script>\n")
+  end
+
+  it "interpolates inside a plain filter" do
+    value = "1 < 2"
+    actual = Haml.render "spec/fixtures/render/095.haml"
+    actual.should eq("var myVar = 1 &lt; 2;\n")
+  end
+
   it "an output-capture helper" do
     actual = Haml.render "spec/fixtures/render/074.haml"
     actual.should eq("<section><p>Hello</p>\n</section>\n")
