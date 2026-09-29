@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e
+
+cd "$(dirname "$0")"/..
+
+echo "prerelease_checks: Starting."
+
+echo ""
+echo "prerelease_checks: Running lint..."
+bin/lint
+echo "prerelease_checks: Lint passed."
+
+echo ""
+echo "prerelease_checks: Running specs..."
+bin/specs
+echo "prerelease_checks: Specs passed."
+
+echo ""
+echo "prerelease_checks: Running integration tests..."
+scripts/integration
+echo "prerelease_checks: Integration tests passed."
+
+echo ""
+echo "prerelease_checks: Finished! Success! :)"
+
+cat << "EOF"
+
+--------------------------------
+
+NEXT STEPS:
+
+1. [DONE] Run `bin/prerelease_checks`.
+2. Commit the reviewed release changes.
+3. Update the version number in `shard.yml` and `src/haml.cr`.
+4. Update the `CHANGELOG`.
+5. Commit it: `git commit -m "Update CHANGELOG for v1.x.y"`
+
+Tag and push:
+
+git tag -a v1.x.y -m 'haml 1.x.y'
+git push --atomic origin HEAD v1.x.y
+EOF

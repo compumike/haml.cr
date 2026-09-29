@@ -1,9 +1,9 @@
 #!/bin/sh
+# Run with "--verbose" to see individual specs listed.
 set -e
 
 cd "$(dirname "$0")"/..
 
-crystal --version
-
-echo ""
-exec crystal spec --verbose --error-trace "$@"
+echo -n "Running specs with: "
+crystal eval 'puts Crystal::DESCRIPTION.inspect'
+exec crystal spec --error-trace "$@"

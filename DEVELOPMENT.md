@@ -33,7 +33,7 @@ The example commands here release an example version `1.x.y`. Replace `1.x.y` wi
 
 When preparing a new release:
 
-1. Run specs with `direnv exec . bin/specs`.
+1. Run specs with `direnv exec . bin/prerelease_checks`.
 2. Commit the reviewed release changes.
 3. Update the version number in `shard.yml` and `src/haml.cr`.
 4. Update the `CHANGELOG`.

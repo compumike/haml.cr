@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-- (none)
+- `bin/prerelease_checks` script
 
 ---
 

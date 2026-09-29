@@ -3,7 +3,4 @@ set -e
 
 cd "$(dirname "$0")"/..
 
-crystal --version
-
-echo ""
 exec crystal tool format src spec examples
