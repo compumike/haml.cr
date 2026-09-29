@@ -2,7 +2,7 @@
 
 A compile-time Haml templating engine for [Crystal](https://crystal-lang.org/). Inspired by the [Ruby Haml gem](https://haml.info/) ([source](https://github.com/haml/haml), [rubygems](https://rubygems.org/gems/haml)).
 
-Templates contain Haml markup and Crystal expressions, compiled ahead of time into code that writes to an IO (`Haml.embed(filename)`) or returns a string (`Haml.render(filename)`).
+A template contains Haml markup and Crystal expressions, compiled ahead of time into a Crystal macro that writes to an IO (`Haml.embed(filename, io_name)`) or returns a string (`Haml.render(filename)`).
 
 ---
 
@@ -17,6 +17,7 @@ Templates contain Haml markup and Crystal expressions, compiled ahead of time in
   - [HTML attributes](#html-attributes)
   - [CSS Classes and Styles](#css-classes-and-styles)
   - [Multiline Crystal](#multiline-crystal)
+  - [Including partial templates](#including-partial-templates)
 - [Installation](#installation)
 - [Key differences from Ruby Haml](#key-differences-from-ruby-haml)
 - [Issues and pull requests](#issues-and-pull-requests)
@@ -145,17 +146,20 @@ See [SYNTAX.md](docs/SYNTAX.md). Quick overview:
 #### Examples
 
 ```crystal
-str = "A & B"
+str = "A&B"
 ```
 
 | Haml input | HTML output | Notes |
 |---|---|---|
-| `%p Hello A&B` | `<p>Hello A&B</p>` | |
+| `%p Hello A&B` | `<p>Hello A&B</p>` | your text passes through unescaped |
 | `%p Hello A&amp;B` | `<p>Hello A&amp;B</p>` | |
-| `%p Hello #{str}` | `<p>Hello A&amp;B</p>` | interpolated and escaped |
-| `'<p>Hello #{str}</p>'` | `<p>Hello A&amp;B</p>` | your own HTML tags + escaped interpolated expressions
+| `%p Hello #{str}` | `<p>Hello A&amp;B</p>` | `#{...}` is interpolated and escaped |
+| `<p>Hello #{str}</p>` | `<p>Hello A&amp;B</p>` | your own HTML tags + escaped interpolated expressions |
+| `%p& Hello A&B` | `<p>Hello A&amp;B</p>` | the `&` forces escaping even on your own text |
 | `%p= str` | `<p>A&amp;B</p>` | |
 | `%p!= str` | `<p>A&B</p>` | `!=` unsafely inserts raw output. (Caution: XSS risk.) |
+
+The `#{str}` and `= str` forms will be the ones you use most frequently. Save `!=` for when you want to insert pre-escaped content (such as raw HTML).
 
 ### If/else
 
@@ -254,6 +258,48 @@ Multiline inline Crystal code (notice `=` vs. `!=` vs. `-`):
   )
   = now_3 # but the value can be used later (will not have 1.hour added to it)
 ```
+
+### Including partial templates
+
+In `fruits.html.haml`:
+
+```
+- fruits.each do |fruit|
+  != Haml.render("#{__DIR__}/_fruit.html.haml")
+```
+
+In `_fruit.html.haml`:
+
+```
+.btn.mb-2{id: "fruit_#{fruit}"}
+  = fruit
+```
+
+Render it:
+
+```crystal
+require "haml"
+fruits = ["apple", "banana", "peach"]
+puts Haml.render("#{__DIR__}/fruits.html.haml")
+```
+
+Outputs:
+
+```html
+<div class="btn mb-2" id="fruit_apple">
+apple
+</div>
+
+<div class="btn mb-2" id="fruit_banana">
+banana
+</div>
+
+<div class="btn mb-2" id="fruit_peach">
+peach
+</div>
+```
+
+Note that `__DIR__` in  `Haml.render("#{__DIR__}/fruits.html.haml")` is used to tell the compiler that `fruits.html.haml` is in the same directory as this file. In your project, you can just specify paths from the build root, such as `Haml.render("src/templates/fruits.html.haml")`.
 
 ---
 
