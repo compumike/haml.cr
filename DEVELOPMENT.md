@@ -37,7 +37,7 @@ When preparing a new release:
 2. Commit the reviewed release changes.
 3. Update the version number in `shard.yml` and `src/haml.cr`.
 4. Update the `CHANGELOG`.
-5. Commit it: `git commit -m "Release v1.x.y"`
+5. Commit it: `git commit -m "Update CHANGELOG for v1.x.y"`
 
 Tag and push:
 
