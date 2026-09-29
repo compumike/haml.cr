@@ -8,6 +8,13 @@
 
 ---
 
+## 1.0.3
+
+- more examples: partials
+- improve README.md
+
+---
+
 ## 1.0.2
 
 - `scripts/hamlc_integration_tests` script to test `hamlc` binary
