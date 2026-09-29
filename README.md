@@ -1,12 +1,31 @@
 # haml.cr
 
-A Haml templating engine for [Crystal](https://crystal-lang.org/). Inspired by the [Ruby Haml gem](https://haml.info/) ([source](https://github.com/haml/haml), [rubygems](https://rubygems.org/gems/haml)).
+A compile-time Haml templating engine for [Crystal](https://crystal-lang.org/). Inspired by the [Ruby Haml gem](https://haml.info/) ([source](https://github.com/haml/haml), [rubygems](https://rubygems.org/gems/haml)).
 
-Templates contain Haml markup and Crystal expressions, compiled ahead of time into code that writes to an IO.
+Templates contain Haml markup and Crystal expressions, compiled ahead of time into code that writes to an IO (`Haml.embed(filename)`) or returns a string (`Haml.render(filename)`).
 
 ---
 
-## Quick Demo
+## Table of Contents
+
+- [Quick demo](#quick-demo)
+- [Interface](#interface)
+- [Syntax](#syntax)
+  - [Interpolation and HTML escaping](#interpolation-and-html-escaping)
+  - [If/else](#ifelse)
+  - [Loops](#loops)
+  - [HTML attributes](#html-attributes)
+  - [CSS Classes and Styles](#css-classes-and-styles)
+  - [Multiline Crystal](#multiline-crystal)
+- [Installation](#installation)
+- [Key differences from Ruby Haml](#key-differences-from-ruby-haml)
+- [Issues and pull requests](#issues-and-pull-requests)
+- [Author](#author)
+- [Development note](#development-note)
+
+---
+
+## Quick demo
 
 1. Create a template file `haml_demo.html.haml`:
 
@@ -19,13 +38,13 @@ Templates contain Haml markup and Crystal expressions, compiled ahead of time in
     = post.content
 ```
 
-2. Call it from your Crystal code `haml_demo.cr`:
+2. Call `Haml.render` from your Crystal code `haml_demo.cr`:
 
 ```crystal
 require "haml"
 
 record Post, title : String, subtitle : String, content : String
-my_post = Post.new(title: "Welcome to Haml", subtitle: "A nice way to write templates", content: "Ruby & Crystal love Haml!")
+example_post = Post.new(title: "Welcome to Haml", subtitle: "A nice way to write templates", content: "Ruby & Crystal love Haml!")
 
 def my_view(post : Post) : String
   Haml.render("#{__DIR__}/haml_demo.html.haml")
@@ -58,6 +77,8 @@ Please observe:
 
 ## Interface
 
+### Macros
+
 Just like Crystal's stdlib [ECR](https://crystal-lang.org/api/latest/ECR.html), there are three supported macros:
 
 - `Haml.embed(filename, io_name)` - writes to io_name
@@ -70,9 +91,11 @@ As shown above, using `Haml.render(filename)` from your view method is probably 
 
 A `Haml.render_string(s)` macro can be used for quick testing (but can become confusing because `#{...}` interpolation may happen before the string is passed to the macro):
 
-```
+```shell
 crystal eval 'require "haml" ; puts Haml.render_string("%h1 Hello World\n%h2\n  from Crystal\n  = Crystal::VERSION")'
+```
 
+```html
 <h1>Hello World</h1>
 <h2>
 from Crystal
@@ -82,7 +105,27 @@ from Crystal
 
 ### `hamlc` binary compiler
 
-In this directory, `shards build` will build a `hamlc` binary which compiles a `.haml` file into a Crystal macro.
+In this directory, `shards build` will build a `hamlc` binary which compiles a `.haml` file into a Crystal macro:
+
+```shell
+hamlc --no-locations examples/haml_demo.html.haml
+```
+
+outputs:
+
+```crystal
+__haml_io << "<section class=\"container\">\n<h1>"
+::HTML.escape((post.title
+).to_s, __haml_io)
+__haml_io << "</h1>\n<h2>"
+::HTML.escape((post.subtitle
+).to_s, __haml_io)
+__haml_io << "</h2>\n<div class=\"content\">\n"
+::HTML.escape((post.content
+).to_s, __haml_io)
+__haml_io << "\n</div>\n</section>\n"
+nil
+```
 
 In general you won't need this: just use `Haml.render` in your code as shown above.
 
@@ -90,18 +133,127 @@ In general you won't need this: just use `Haml.render` in your code as shown abo
 
 ## Syntax
 
-See [SYNTAX.md](docs/SYNTAX.md).
+See [SYNTAX.md](docs/SYNTAX.md). Quick overview:
 
----
-
-## Security: HTML escaping
+### Interpolation and HTML escaping
 
 - `=` escapes every dynamic value using `HTML.escape`.
 - `!=` inserts explicitly trusted raw markup.
 - There is no `html_safe` bypass like in Ruby on Rails.
 - Attribute values always escape.
 
-Templates themselves are considered to be trusted source code, not sandboxed user input.
+#### Examples
+
+```crystal
+str = "A & B"
+```
+
+| Haml input | HTML output | Notes |
+|---|---|---|
+| `%p Hello A&B` | `<p>Hello A&B</p>` | |
+| `%p Hello A&amp;B` | `<p>Hello A&amp;B</p>` | |
+| `%p Hello #{str}` | `<p>Hello A&amp;B</p>` | interpolated and escaped |
+| `'<p>Hello #{str}</p>'` | `<p>Hello A&amp;B</p>` | your own HTML tags + escaped interpolated expressions
+| `%p= str` | `<p>A&amp;B</p>` | |
+| `%p!= str` | `<p>A&B</p>` | `!=` unsafely inserts raw output. (Caution: XSS risk.) |
+
+### If/else
+
+```haml
+%p
+  Coin flip:
+  %strong
+    - if Random.rand >= 0.5
+      Heads
+    - else
+      Tails
+```
+
+### Loops
+
+```haml
+%ul
+  - entries.each do |entry|
+    %li= entry.title
+```
+
+### HTML attributes
+
+```haml
+%a{href: entry.url, target: "_blank"}
+  = entry.title
+```
+
+Multi-line attributes are supported:
+
+```haml
+%a{
+  href: entry.url,
+  target: "_blank"
+}
+  = entry.title
+```
+
+### CSS Classes and Styles
+
+```haml
+%h2#my_id Subheading with an ID
+
+%h2.mb-0.fw-bold#another_id With classes and ID
+
+%h2{class: ["mb-0", "fw-bold", dynamic_class], id: dynamic_id} With Crystal expressions to set class and ID
+
+%div.container
+-# is the same as
+.container
+```
+
+### Multiline Crystal
+
+Multiline Crystal interpolated strings:
+
+```haml
+- value = "Crystal expression"
+.example-1
+  =%(
+    This entire line, including its dynamically interpolated #{value}, will be HTML-escaped.
+
+    And this #{4 - 3} too.
+  )
+
+.example-2
+  !=%(
+    This entire line, including its dynamically interpolated #{value}, will NOT be HTML-escaped. (XSS risk!)
+
+    And this #{4 - 3} too.
+  )
+```
+
+Multiline inline Crystal code (notice `=` vs. `!=` vs. `-`):
+
+```haml
+.example-1
+  = (
+    now_1 = Time.utc
+    # The value will be HTML-escaped and inserted into the div:
+    now_1 + 1.hour
+  )
+
+.example-2
+  != (
+    now_2 = Time.utc
+    # The value NOT be HTML-escaped, and will be inserted RAW into the div: (XSS risk!)
+    now_2 + 1.hour
+  )
+
+.example-3
+  - (
+    now_3 = Time.utc
+    # The value will not be inserted.
+    now_3 + 1.hour
+  )
+  = now_3 # but the value can be used later (will not have 1.hour added to it)
+```
 
 ---
 
@@ -117,23 +269,9 @@ Templates themselves are considered to be trusted source code, not sandboxed use
 
 2. Run `shards install`
 
----
+3. Add `require "haml"`
 
-## Usage
-
-Use `Haml.render "views/page.html.haml"` to return a String, or
-`Haml.embed "views/page.html.haml", io` to write to an existing IO. Inside a view
-class, `Haml.def_to_s "views/page.html.haml"` supplies `to_s(io : IO)`. File paths are
-relative to the build working directory; use `__DIR__` for absolute paths.
-Templates and inline strings must be available at compile time.
-
-`=` escapes every dynamic value using `HTML.escape`. `!=` inserts explicitly
-trusted raw markup. There is no `html_safe` bypass. Attribute values always
-escape. Templates themselves are trusted source code, not sandboxed user input.
-
-See [supported syntax](docs/SYNTAX.md),
-and the programs in `examples/`. This is a starting implementation with a
-documented syntax subset, not full Ruby Haml compatibility.
+4. Call `Haml.render("src/templates/my_template.html.haml")`
 
 ---
 
