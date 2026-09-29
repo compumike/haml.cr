@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- (none)
+
+---
+
+## 1.0.1
+
 - `bin/prerelease_checks` script
 
 ---

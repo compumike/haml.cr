@@ -1,5 +1,5 @@
 name: haml
-version: 0.1.0
+version: 1.0.1
 
 crystal: ">= 1.14.0, < 2.0.0"
 license: MIT

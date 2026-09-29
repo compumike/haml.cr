@@ -5,5 +5,5 @@ require "./haml/runtime"
 require "./haml/macros"
 
 module Haml
-  VERSION = "0.1.0"
+  VERSION = "1.0.1"
 end
