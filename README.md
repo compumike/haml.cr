@@ -1,14 +1,14 @@
 # haml.cr
 
-A Haml templating engine for [Crystal](https://crystal-lang.org/), inspired by the [Ruby Haml gem](https://haml.info/) ([source](https://github.com/haml/haml), [rubygems](https://rubygems.org/gems/haml)).
+A Haml templating engine for [Crystal](https://crystal-lang.org/). Inspired by the [Ruby Haml gem](https://haml.info/) ([source](https://github.com/haml/haml), [rubygems](https://rubygems.org/gems/haml)).
 
 Templates contain Haml markup and Crystal expressions, compiled ahead of time into code that writes to an IO.
 
 ---
 
-## Demo
+## Quick Demo
 
-Create a template file `haml_demo.html.haml`:
+1. Create a template file `haml_demo.html.haml`:
 
 ```haml
 - # I'm a comment and won't be rendered into the output HTML!
@@ -19,15 +19,19 @@ Create a template file `haml_demo.html.haml`:
     = post.content
 ```
 
-Call it from your Crystal code `haml_demo.cr`:
+2. Call it from your Crystal code `haml_demo.cr`:
 
 ```crystal
 require "haml"
 
 record Post, title : String, subtitle : String, content : String
-post = Post.new(title: "Welcome to Haml", subtitle: "A nice way to write templates", content: "Ruby & Crystal love Haml!")
+my_post = Post.new(title: "Welcome to Haml", subtitle: "A nice way to write templates", content: "Ruby & Crystal love Haml!")
 
-puts Haml.render("haml_demo.html.haml")
+def my_view(post : Post) : String
+  Haml.render("#{__DIR__}/haml_demo.html.haml")
+end
+
+puts my_view(example_post)
 ```
 
 Run it with `crystal run haml_demo.cr`. Output:
@@ -42,7 +46,45 @@ Ruby &amp; Crystal love Haml!
 </section>
 ```
 
-Notice that the `&` is escaped to `&amp;`.
+Please observe:
+
+- The `&` is automatically HTML-escaped to `&amp;`.
+  - (If you are viewing this README.md with a Markdown renderer, it may or may not show that, so look at the raw Markdown, or run the example yourself.)
+- Just like Crystal's stdlib [ECR](https://crystal-lang.org/api/latest/ECR.html):
+  - The template file is fully compiled into the binary at Crystal compile time: the template file is not read and not needed at runtime.
+  - The `Haml.render` compiles the template file into a Crystal macro, so it can access in-scope variables like `post`, and run other arbitrary Crystal code.
+
+---
+
+## Interface
+
+Just like Crystal's stdlib [ECR](https://crystal-lang.org/api/latest/ECR.html), there are three supported macros:
+
+- `Haml.embed(filename, io_name)` - writes to io_name
+- `Haml.render(filename)` - returns a String (i.e. it wraps `Haml.embed` in `String.build`)
+- `Haml.def_to_s(filename)` - defines a `#to_s(io)` method
+
+As shown above, using `Haml.render(filename)` from your view method is probably the most straightforward way to use Haml templates in your Crystal code.
+
+### One-off `Haml.render_string`
+
+A `Haml.render_string(s)` macro can be used for quick testing (but can become confusing because `#{...}` interpolation may happen before the string is passed to the macro):
+
+```
+crystal eval 'require "haml" ; puts Haml.render_string("%h1 Hello World\n%h2\n  from Crystal\n  = Crystal::VERSION")'
+
+<h1>Hello World</h1>
+<h2>
+from Crystal
+1.21.1
+</h2>
+```
+
+### `hamlc` binary compiler
+
+In this directory, `shards build` will build a `hamlc` binary which compiles a `.haml` file into a Crystal macro.
+
+In general you won't need this: just use `Haml.render` in your code as shown above.
 
 ---
 
@@ -60,6 +102,20 @@ See [SYNTAX.md](docs/SYNTAX.md).
 - Attribute values always escape.
 
 Templates themselves are considered to be trusted source code, not sandboxed user input.
+
+---
+
+## Installation
+
+1. Add the dependency to your `shard.yml`:
+
+   ```yaml
+   dependencies:
+     haml:
+       github: compumike/haml.cr
+   ```
+
+2. Run `shards install`
 
 ---
 
@@ -106,6 +162,12 @@ Some important differences:
 
 ---
 
+## Author
+
+- [compumike](https://github.com/compumike) - creator and maintainer
+
+---
+
 ## Development note
 
-This project was developed extensively using AI coding tool assistance. Use at your own risk.
+This project was written almost entirely by AI coding agents, including an extensive test suite. Use at your own risk.

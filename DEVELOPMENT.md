@@ -1,5 +1,7 @@
 # Development
 
+## Specs and Integration Tests
+
 ```sh
 # Run specs:
 direnv exec . bin/specs
@@ -24,3 +26,22 @@ To build the precompiler: `direnv exec . shards build`. The `hamlc` target in
 `--check` validates Haml structure; native Crystal compilation is still needed
 to check expressions and types. Tooling can explicitly require `haml/compiler`
 and call `Haml.compile` to obtain Crystal source.
+
+## Versioned releases
+
+The example commands here release an example version `1.x.y`. Replace `1.x.y` with the actual version number as you use them.
+
+When preparing a new release:
+
+1. Run specs with `direnv exec . bin/specs`.
+2. Commit the reviewed release changes.
+3. Update the version number in `shard.yml` and `src/haml.cr`.
+4. Update the `CHANGELOG`.
+5. Commit it: `git commit -m "Release v1.x.y"`
+
+Tag and push:
+
+```sh
+git tag -a v1.x.y -m 'haml 1.x.y'
+git push --atomic origin HEAD v1.x.y
+```

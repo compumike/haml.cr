@@ -15,3 +15,6 @@
 
 # Keep native build artifacts local.
 /.crystal-cache/
+
+# Compiled hamlc binary
+/bin/hamlc
