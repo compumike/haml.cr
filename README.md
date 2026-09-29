@@ -301,6 +301,8 @@ peach
 
 Note that `__DIR__` in  `Haml.render("#{__DIR__}/fruits.html.haml")` is used to tell the compiler that `fruits.html.haml` is in the same directory as this file. In your project, you can just specify paths from the build root, such as `Haml.render("src/templates/fruits.html.haml")`.
 
+(Advanced: to reduce String allocations, it is possible to avoid having the partial build its own intermediate String by instead passing it the same IO name as the parent, and using, for example, `!= Haml.embed("_fruit.html.haml", __haml_io)` in place of `!= Haml.render(...)`.)
+
 ---
 
 ## Installation
