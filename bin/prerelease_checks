@@ -21,6 +21,11 @@ scripts/integration
 echo "prerelease_checks: Integration tests passed."
 
 echo ""
+echo "prerelease_checks: Running hamlc binary integration tests..."
+scripts/hamlc_integration_tests
+echo "prerelease_checks: hamlc binary integration tests passed."
+
+echo ""
 echo "prerelease_checks: Finished! Success! :)"
 
 cat << "EOF"

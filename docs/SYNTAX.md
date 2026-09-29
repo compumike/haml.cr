@@ -1,4 +1,6 @@
-# Supported syntax and intentional differences
+# Supported Haml syntax (and intentional differences from Ruby Haml)
+
+*NOTE: This page was written by an AI coding assistant and has not been extensively reviewed.*
 
 This is an initial Haml-to-Crystal implementation, not a claim of full Ruby Haml compatibility. Expressions are Crystal.
 

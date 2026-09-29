@@ -1,0 +1,108 @@
+#!/bin/sh
+# Compiles and tests the hamlc binary, including its CLI behavior.
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+CRYSTAL_CACHE_DIR=${CRYSTAL_CACHE_DIR:-$ROOT/.crystal-cache}
+export CRYSTAL_CACHE_DIR
+
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/hamlc-integration.XXXXXX")
+trap 'rm -rf "$TMP"' EXIT HUP INT TERM
+fail() { echo "FAIL: $*" >&2; exit 1; }
+
+HAMLC="$ROOT/bin/hamlc"
+rm -f "$HAMLC"
+shards build
+[ -x "$HAMLC" ] || fail 'shards build did not produce bin/hamlc'
+
+# Help should show the command usage.
+"$HAMLC" --help > "$TMP/help"
+grep -F 'Usage: hamlc [options] FILE.haml' "$TMP/help" >/dev/null || fail '--help omitted usage'
+echo 'PASS: --help prints usage'
+
+# Create a simple template.
+cat > "$TMP/simple.html.haml" <<'HAML'
+%p Hello
+HAML
+
+# Create a more advanced template with some interpolation
+cat > "$TMP/interpolation.html.haml" <<'HAML'
+%p Escaped inline: #{name}
+%p
+  Escaped equals-sign:
+  = name
+%p
+  Unescaled equals-sign:
+  != name
+HAML
+
+# A simple template should generate the expected Crystal on stdout.
+"$HAMLC" --no-locations "$TMP/simple.html.haml" > "$TMP/simple_stdout.cr"
+cat > "$TMP/simple_expected.cr" <<'CRYSTAL'
+__haml_io << "<p>Hello</p>\n"
+nil
+CRYSTAL
+cmp "$TMP/simple_expected.cr" "$TMP/simple_stdout.cr" || fail 'simple.html.haml: stdout generation differs from expected Crystal'
+echo 'PASS: simple.html.haml: template compiles to stdout'
+
+# A simple template with "-o" should generate the same expected Crystal saved to the specified output file.
+"$HAMLC" --no-locations -o "$TMP/simple_output.cr" "$TMP/simple.html.haml"
+cmp "$TMP/simple_expected.cr" "$TMP/simple_output.cr" || fail 'simple.html.haml: -o output differs from expected'
+cmp "$TMP/simple_stdout.cr" "$TMP/simple_output.cr" || fail 'simple.html.haml: -o output differs from stdout'
+echo 'PASS: simple.html.haml: template compiles to a file'
+
+# A template with interpolation should be correct
+"$HAMLC" --no-locations "$TMP/interpolation.html.haml" > "$TMP/interpolation_stdout.cr"
+cat > "$TMP/interpolation_expected.cr" <<'CRYSTAL'
+__haml_io << "<p>Escaped inline: "
+::HTML.escape((name
+).to_s, __haml_io)
+__haml_io << "</p>\n<p>\nEscaped equals-sign:\n"
+::HTML.escape((name
+).to_s, __haml_io)
+__haml_io << "\n</p>\n<p>\nUnescaled equals-sign:\n"
+((name
+)).to_s(__haml_io)
+__haml_io << "\n</p>\n"
+nil
+CRYSTAL
+cmp "$TMP/interpolation_expected.cr" "$TMP/interpolation_stdout.cr" || fail 'interpolation.html.haml: stdout generation differs from expected Crystal'
+echo 'PASS: interpolation.html.haml: template compiles to stdout'
+
+# Check the named method wrapper and its IO parameter.
+"$HAMLC" --no-locations --method=render_probe "$TMP/simple.html.haml" > "$TMP/method.cr"
+cat > "$TMP/expected-method.cr" <<'CRYSTAL'
+def render_probe(__haml_io : IO) : Nil
+__haml_io << "<p>Hello</p>\n"
+nil
+end
+CRYSTAL
+cmp "$TMP/expected-method.cr" "$TMP/method.cr" || fail '--method generated an unexpected wrapper'
+echo 'PASS: --method wraps the generated body'
+
+# A custom IO name must be used throughout the generated body.
+"$HAMLC" --no-locations --io=output "$TMP/simple.html.haml" > "$TMP/io.cr"
+cat > "$TMP/expected-io.cr" <<'CRYSTAL'
+output << "<p>Hello</p>\n"
+nil
+CRYSTAL
+cmp "$TMP/expected-io.cr" "$TMP/io.cr" || fail '--io did not select the output variable'
+echo 'PASS: --io selects the output variable'
+
+# Check mode should validate without creating output.
+"$HAMLC" --check -o "$TMP/checked.cr" "$TMP/simple.html.haml" > "$TMP/check.stdout"
+[ ! -s "$TMP/check.stdout" ] || fail '--check wrote to stdout'
+[ ! -e "$TMP/checked.cr" ] || fail '--check wrote an output file'
+echo 'PASS: --check validates without writing output'
+
+# Invalid Haml should fail with a located diagnostic on stderr.
+printf '  %%p invalid\n' > "$TMP/bad.haml"
+if "$HAMLC" --check "$TMP/bad.haml" > "$TMP/error.stdout" 2> "$TMP/error.stderr"; then
+  fail '--check accepted malformed Haml'
+fi
+[ ! -s "$TMP/error.stdout" ] || fail 'error diagnostic leaked to stdout'
+grep -F 'bad.haml:1:' "$TMP/error.stderr" >/dev/null || fail 'error diagnostic omitted filename and line'
+echo 'PASS: invalid Haml reports a located error on stderr'
+
+echo 'All hamlc integration checks passed.'

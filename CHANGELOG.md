@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `scripts/hamlc_integration_tests` script to test `hamlc` binary
 - (none)
 
 ---
