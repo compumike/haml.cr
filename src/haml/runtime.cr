@@ -215,7 +215,7 @@ module Haml
         # Class strings are token lists; IDs are not split at whitespace. Both
         # accept numeric values; zero and the string "false" are NOT falsey.
         if deduplicate
-          text.split.each { |token| target << token unless target.includes?(token) }
+          text.split { |token| target << token unless target.includes?(token) }
         else
           target << text unless text.empty?
         end
