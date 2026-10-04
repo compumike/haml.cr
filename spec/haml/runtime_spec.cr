@@ -1,12 +1,48 @@
 require "../spec_helper"
 
 describe Haml::Runtime do
-  it "preserves newlines after, not before, escaping" do
-    String.build { |io| Haml::Runtime.write_preserved(io, "<x>\r\ny\n") }.should eq("&lt;x&gt;&#10;y&#10;")
+  describe "void_tag?" do
+    it "recognizes void tags case insensitively" do
+      Haml::Runtime.void_tag?("br").should be_true
+      Haml::Runtime.void_tag?("BR").should be_true
+      Haml::Runtime.void_tag?("img").should be_true
+      Haml::Runtime.void_tag?("iMg").should be_true
+      Haml::Runtime.void_tag?("IMG").should be_true
+      Haml::Runtime.void_tag?("wBr").should be_true
+    end
+
+    it "rejects non-void tags regardless of case" do
+      Haml::Runtime.void_tag?("div").should be_false
+      Haml::Runtime.void_tag?("DIV").should be_false
+      Haml::Runtime.void_tag?("span").should be_false
+      Haml::Runtime.void_tag?("SPAN").should be_false
+    end
+
+    it "requires an exact void tag name" do
+      Haml::Runtime.void_tag?("").should be_false
+      Haml::Runtime.void_tag?("br ").should be_false
+      Haml::Runtime.void_tag?("image").should be_false
+    end
+
+    it "correctly classifies all VOID_TAGS" do
+      Haml::Runtime::VOID_TAGS.each do |tag|
+        Haml::Runtime.void_tag?(tag.downcase).should be_true
+        Haml::Runtime.void_tag?(tag.upcase).should be_true
+        Haml::Runtime.void_tag?(tag.capitalize).should be_true
+        Haml::Runtime.void_tag?(tag.downcase + "xyzfake").should be_false
+        Haml::Runtime.void_tag?(tag.upcase + "xyzfake").should be_false
+      end
+    end
   end
 
-  it "escapes markup before preserving newlines" do
-    String.build { |io| Haml::Runtime.write_preserved(io, "<b>\nx</b>") }.should eq("&lt;b&gt;&#10;x&lt;/b&gt;")
+  describe ".write_preserved" do
+    it "preserves newlines after, not before, escaping" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "<x>\r\ny\n") }.should eq("&lt;x&gt;&#10;y&#10;")
+    end
+
+    it "escapes markup before preserving newlines" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "<b>\nx</b>") }.should eq("&lt;b&gt;&#10;x&lt;/b&gt;")
+    end
   end
 end
 

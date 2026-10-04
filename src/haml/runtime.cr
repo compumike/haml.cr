@@ -10,7 +10,35 @@ module Haml
     BOOLEAN_ATTRIBUTES = %w(allowfullscreen async autofocus autoplay checked controls default defer disabled formnovalidate hidden inert ismap itemscope loop multiple muted nomodule novalidate open playsinline readonly required reversed selected)
 
     def self.void_tag?(name : String) : Bool
-      VOID_TAGS.includes?(name.downcase)
+      # This is equivalent to:
+      #   VOID_TAGS.includes?(name.downcase)
+      # which is the same as:
+      #   VOID_TAGS.any? { |tag| tag.compare(name, case_insensitive: true).zero? } # no allocations
+      # But this case dispatch is faster and still has zero allocations.
+
+      # Keep in sync with VOID_TAGS:
+      case name.bytesize
+      when 2
+        return true if "br".compare(name, case_insensitive: true).zero?
+        return true if "hr".compare(name, case_insensitive: true).zero?
+      when 3
+        return true if "col".compare(name, case_insensitive: true).zero?
+        return true if "img".compare(name, case_insensitive: true).zero?
+        return true if "wbr".compare(name, case_insensitive: true).zero?
+      when 4
+        return true if "area".compare(name, case_insensitive: true).zero?
+        return true if "base".compare(name, case_insensitive: true).zero?
+        return true if "link".compare(name, case_insensitive: true).zero?
+        return true if "meta".compare(name, case_insensitive: true).zero?
+      when 5
+        return true if "embed".compare(name, case_insensitive: true).zero?
+        return true if "input".compare(name, case_insensitive: true).zero?
+        return true if "param".compare(name, case_insensitive: true).zero?
+        return true if "track".compare(name, case_insensitive: true).zero?
+      when 6
+        return true if "source".compare(name, case_insensitive: true).zero?
+      end
+      false
     end
 
     def self.write_preserved(io : IO, value : T) : Nil forall T
@@ -138,7 +166,7 @@ module Haml
       private def set(name : String, value : T) : Nil forall T
         if value.nil?
           @values.delete(name)
-        elsif Runtime::BOOLEAN_ATTRIBUTES.includes?(name.downcase) && value.is_a?(Bool)
+        elsif Runtime::BOOLEAN_ATTRIBUTES.any? { |attribute| attribute.compare(name, case_insensitive: true).zero? } && value.is_a?(Bool)
           if value
             @values[name] = true
           else

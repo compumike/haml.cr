@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `Haml::Runtime.void_tag?`: no-allocations and faster bytesize-based lookup (6.18x speedup; 0 memory allocations) (thanks @willhbr)
 - (none)
 
 ---
