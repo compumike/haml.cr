@@ -196,6 +196,9 @@ module Haml
       private def save_tokens(name : String, tokens : Array(String), separator : String) : Nil
         if tokens.empty?
           @values.delete(name)
+        elsif tokens.size == 1
+          # Reuse the lone token instead of allocating a joined copy.
+          @values[name] = tokens.first
         else
           @values[name] = tokens.join(separator)
         end
