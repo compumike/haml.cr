@@ -11,6 +11,7 @@
 - perf: compile simple fixed literal attributes at compile time when possible, avoiding `Haml::Runtime::Attributes` entirely in many cases (thanks @willhbr)
 - perf: `Haml::Runtime::Attributes#collect_tokens`: use block form of String#split to avoid temporary array allocation (1.2x speedup, -20% memory)
 - perf: `Haml::Runtime::Attributes#save_tokens`: reuse single-token String instance in the common n=1 case (one id or one class) (1.25x speedup, -32 bytes alloc)
+- perf: `Haml::Runtime.valid_attribute_name?`: run with #each_byte instead of #each_char (1.6x speedup)
 - (none)
 
 ---

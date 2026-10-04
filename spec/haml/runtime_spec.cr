@@ -62,6 +62,28 @@ describe Haml::Runtime do
   end
 
   describe ".valid_attribute_name?" do
+    it "rejects every ASCII delimiter and control byte even beside Unicode" do
+      (0..127).each do |code|
+        name = "猫#{code.chr}é"
+        forbidden = code <= 32 || code == 127 || "\"'<>/=".includes?(code.chr)
+        Haml::Runtime.valid_attribute_name?(name).should eq(!forbidden)
+      end
+    end
+
+    it "allows non-ASCII characters including non-ASCII whitespace" do
+      Haml::Runtime.valid_attribute_name?("café-猫-😀-\u00a0-\u2003").should be_true
+    end
+
+    it "checks ASCII delimiters even next to malformed UTF-8" do
+      # Name validation checks delimiters; it does not validate UTF-8 encoding.
+      [Bytes[0xff], Bytes[0xc0, 0xaf], Bytes[0xe2, 0x82], Bytes[0x80]].each do |bytes|
+        name = String.new(bytes)
+        Haml::Runtime.valid_attribute_name?(name).should be_true
+        Haml::Runtime.valid_attribute_name?(name + "=").should be_false
+        Haml::Runtime.valid_attribute_name?(" " + name).should be_false
+      end
+    end
+
     it "allows normal ascii alphanumeric characters" do
       Haml::Runtime.valid_attribute_name?("title").should be_true
       Haml::Runtime.valid_attribute_name?("TITLE").should be_true

@@ -124,12 +124,13 @@ module Haml
       # another attribute. Reject forbidden syntax instead. This applies equally
       # to authored names and keys from a dynamic attribute splat.
       return false if name.empty?
-      name.each_char do |char|
-        ord : Int32 = char.ord
-        return false if ord <= 32  # space and control characters
-        return false if ord == 127 # DEL character
+      # All forbidden characters are ASCII. Non-ASCII UTF-8 bytes are >= 128,
+      # so they cannot match these checks and need no decoding.
+      name.each_byte do |byte|
+        return false if byte <= 32  # space and control characters
+        return false if byte == 127 # DEL character
         # Characters that may break attribute parsing:
-        return false if char == '"' || char == '\'' || char == '<' || char == '>' || char == '/' || char == '='
+        return false if byte == '"'.ord || byte == '\''.ord || byte == '<'.ord || byte == '>'.ord || byte == '/'.ord || byte == '='.ord
       end
       true
     end
