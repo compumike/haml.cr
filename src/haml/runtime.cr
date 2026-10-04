@@ -93,8 +93,30 @@ module Haml
       # Preservation encodes newlines AFTER escaping, so &#10; is not escaped a
       # second time. An intermediate buffer is an explicit exception to the
       # streaming fast path; ordinary output does not allocate an escaped copy.
-      escaped = String.build { |buffer| HTML.escape(value.to_s, buffer) }
-      io << escaped.gsub("\r\n", "\n").gsub('\n', "&#10;")
+      #
+      # This method is equivalent to:
+      #   escaped = String.build { |buffer| HTML.escape(value.to_s, buffer) }
+      #   io << escaped.gsub("\r\n", "\n").gsub('\n', "&#10;")
+      # but this implementation streams the result directly to the IO without allocating the intermediate strings.
+
+      bytes = value.to_s.to_slice
+      start = 0
+
+      bytes.each_with_index do |byte, index|
+        next unless byte == '\n'.ord
+
+        # Treat CRLF as one newline, but leave standalone carriage returns intact.
+        finish = index
+        finish -= 1 if index > start && bytes[index - 1] == '\r'.ord
+        HTML.escape(bytes[start...finish], io)
+
+        # Write the newline entity after escaping so its ampersand stays raw.
+        io << "&#10;"
+        start = index + 1
+      end
+
+      # Newline boundaries are ASCII, so every span retains valid UTF-8.
+      HTML.escape(bytes[start..], io)
     end
 
     def self.valid_attribute_name?(name : String) : Bool

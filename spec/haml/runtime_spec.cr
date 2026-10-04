@@ -102,6 +102,30 @@ describe Haml::Runtime do
     it "escapes markup before preserving newlines" do
       String.build { |io| Haml::Runtime.write_preserved(io, "<b>\nx</b>") }.should eq("&lt;b&gt;&#10;x&lt;/b&gt;")
     end
+
+    it "handles empty input" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "") }.should eq("")
+    end
+
+    it "preserves consecutive and boundary newlines, normalizing CRLF" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "\r\n\ntext\n\r\n") }.should eq("&#10;&#10;text&#10;&#10;")
+    end
+
+    it "leaves standalone carriage returns unchanged" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "a\rb\r") }.should eq("a\rb\r")
+    end
+
+    it "escapes quotes and existing entities without escaping generated newline entities" do
+      String.build { |io| Haml::Runtime.write_preserved(io, "\"'&amp;&#10;\n") }.should eq("&quot;&#39;&amp;amp;&amp;#10;&#10;")
+    end
+
+    it "retains Unicode and whitespace other than newlines" do
+      String.build { |io| Haml::Runtime.write_preserved(io, " café\t猫\n ") }.should eq(" café\t猫&#10; ")
+    end
+
+    it "converts non-string values to text" do
+      String.build { |io| Haml::Runtime.write_preserved(io, 42) }.should eq("42")
+    end
   end
 end
 
