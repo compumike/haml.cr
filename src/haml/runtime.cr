@@ -41,6 +41,54 @@ module Haml
       false
     end
 
+    def self.boolean_attribute?(name : String) : Bool
+      # This is equivalent to:
+      #   BOOLEAN_ATTRIBUTES.includes?(name.downcase)
+      # which is the same as:
+      #   BOOLEAN_ATTRIBUTES.any? { |attribute| attribute.compare(name, case_insensitive: true).zero? } # no allocations
+      # But this case dispatch is faster and still has zero allocations.
+
+      # Keep in sync with BOOLEAN_ATTRIBUTES:
+      case name.bytesize
+      when 4
+        return true if "loop".compare(name, case_insensitive: true).zero?
+        return true if "open".compare(name, case_insensitive: true).zero?
+      when 5
+        return true if "async".compare(name, case_insensitive: true).zero?
+        return true if "defer".compare(name, case_insensitive: true).zero?
+        return true if "inert".compare(name, case_insensitive: true).zero?
+        return true if "ismap".compare(name, case_insensitive: true).zero?
+        return true if "muted".compare(name, case_insensitive: true).zero?
+      when 6
+        return true if "hidden".compare(name, case_insensitive: true).zero?
+      when 7
+        return true if "checked".compare(name, case_insensitive: true).zero?
+        return true if "default".compare(name, case_insensitive: true).zero?
+      when 8
+        return true if "autoplay".compare(name, case_insensitive: true).zero?
+        return true if "controls".compare(name, case_insensitive: true).zero?
+        return true if "disabled".compare(name, case_insensitive: true).zero?
+        return true if "multiple".compare(name, case_insensitive: true).zero?
+        return true if "nomodule".compare(name, case_insensitive: true).zero?
+        return true if "readonly".compare(name, case_insensitive: true).zero?
+        return true if "required".compare(name, case_insensitive: true).zero?
+        return true if "reversed".compare(name, case_insensitive: true).zero?
+        return true if "selected".compare(name, case_insensitive: true).zero?
+      when 9
+        return true if "autofocus".compare(name, case_insensitive: true).zero?
+        return true if "itemscope".compare(name, case_insensitive: true).zero?
+      when 10
+        return true if "novalidate".compare(name, case_insensitive: true).zero?
+      when 11
+        return true if "playsinline".compare(name, case_insensitive: true).zero?
+      when 14
+        return true if "formnovalidate".compare(name, case_insensitive: true).zero?
+      when 15
+        return true if "allowfullscreen".compare(name, case_insensitive: true).zero?
+      end
+      false
+    end
+
     def self.write_preserved(io : IO, value : T) : Nil forall T
       # Preservation encodes newlines AFTER escaping, so &#10; is not escaped a
       # second time. An intermediate buffer is an explicit exception to the
@@ -166,7 +214,7 @@ module Haml
       private def set(name : String, value : T) : Nil forall T
         if value.nil?
           @values.delete(name)
-        elsif Runtime::BOOLEAN_ATTRIBUTES.any? { |attribute| attribute.compare(name, case_insensitive: true).zero? } && value.is_a?(Bool)
+        elsif value.is_a?(Bool) && Runtime.boolean_attribute?(name)
           if value
             @values[name] = true
           else

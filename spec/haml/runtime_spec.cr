@@ -35,6 +35,32 @@ describe Haml::Runtime do
     end
   end
 
+  describe ".boolean_attribute?" do
+    it "correctly classifies all BOOLEAN_ATTRIBUTES" do
+      Haml::Runtime::BOOLEAN_ATTRIBUTES.each do |attribute|
+        Haml::Runtime.boolean_attribute?(attribute.downcase).should be_true
+        Haml::Runtime.boolean_attribute?(attribute.upcase).should be_true
+        Haml::Runtime.boolean_attribute?(attribute.capitalize).should be_true
+        Haml::Runtime.boolean_attribute?(attribute.downcase + "xyzfake").should be_false
+        Haml::Runtime.boolean_attribute?(attribute.upcase + "xyzfake").should be_false
+      end
+    end
+
+    it "recognizes boolean attributes case insensitively" do
+      Haml::Runtime.boolean_attribute?("autofocus").should be_true
+      Haml::Runtime.boolean_attribute?("AUTOFOCUS").should be_true
+      Haml::Runtime.boolean_attribute?("Autofocus").should be_true
+      Haml::Runtime.boolean_attribute?("autofocusxyzfake").should be_false
+      Haml::Runtime.boolean_attribute?("AUTOFOCUSxyzfake").should be_false
+      Haml::Runtime.boolean_attribute?("Autofocusxyzfake").should be_false
+    end
+
+    it "requires an exact boolean attribute name" do
+      Haml::Runtime.boolean_attribute?("").should be_false
+      Haml::Runtime.boolean_attribute?("autofocus ").should be_false
+    end
+  end
+
   describe ".write_preserved" do
     it "preserves newlines after, not before, escaping" do
       String.build { |io| Haml::Runtime.write_preserved(io, "<x>\r\ny\n") }.should eq("&lt;x&gt;&#10;y&#10;")
