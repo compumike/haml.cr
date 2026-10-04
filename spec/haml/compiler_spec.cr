@@ -12,6 +12,78 @@ describe "Haml source generation" do
     code.should contain("&amp;")
   end
 
+  describe "attribute rendering: precomputed versus dynamic" do
+    {
+      %q|%p#me.fw-bold{title: "hi"}|                                              => "<p id=\"me\" class=\"fw-bold\" title=\"hi\"></p>\n",
+      %q|%p{title: ""}|                                                           => "<p title=\"\"></p>\n",
+      %q|%p{title: "café 猫 & < > '"}|                                             => "<p title=\"café 猫 &amp; &lt; &gt; &#39;\"></p>\n",
+      %q|%p{title: "a\"b\\c\nd\re\tf"}|                                           => "<p title=\"a&quot;b\\c\nd\re\tf\"></p>\n",
+      %q|%p{title: "#plain &amp;"}|                                               => "<p title=\"#plain &amp;amp;\"></p>\n",
+      %q|%input{disabled: true, hidden: false, title: nil, required: true}|       => "<input disabled required>\n",
+      %q|%p{title: false, "aria-hidden": false, "data-ready": true}|              => "<p title=\"false\" aria-hidden=\"false\" data-ready=\"true\"></p>\n",
+      %q|%p{count: 0, positive: +42, negative: -42, zero: -0}|                    => "<p count=\"0\" positive=\"42\" negative=\"-42\" zero=\"0\"></p>\n",
+      %q|%p{min: -9223372036854775808, max: 9223372036854775807}|                 => "<p min=\"-9223372036854775808\" max=\"9223372036854775807\"></p>\n",
+      %q|%p.base#one{class: "base extra", id: "two", title: "old", title: "new"}| => "<p class=\"base extra\" id=\"one_two\" title=\"new\"></p>\n",
+      %q|%p{title: "old", title: nil}|                                            => "<p></p>\n",
+      %q|%input(disabled=true title=nil count=12)|                                => "<input disabled count=\"12\">\n",
+    }.each do |source, html|
+      it "precomputes simple literal attributes in #{source.inspect}" do
+        # simple but common cases which are known at compile time don't need a runtime Haml::Attributes object
+        code = Haml.compile(source, "x", "io", Haml::Options.new(source_locations: false))
+        code.should eq("io << #{html.inspect}\nnil\n")
+      end
+    end
+
+    [
+      %q|"#{name}"|,
+      %q|"\#{name}"|,
+      %q|"\\#{name}"|,
+      %q|"hi".upcase|,
+      %q|"hi" + "there"|,
+      %q|"\x41"|,
+      %q|"\u0041"|,
+      "\"first\nsecond\"",
+      %q|%q(hi)|,
+      %q|'x'|,
+      "nil || name",
+      "true && flag",
+      "false.to_s",
+      "1 + 2",
+      "1.5",
+      "1e3",
+      "1_i64",
+      "1_000",
+      "0xff",
+      "012",
+      "9223372036854775808",
+      "-9223372036854775809",
+      "(42)",
+      "name",
+      "[1, 2]",
+      "{nested: true}",
+      "42 # trailing comment\n",
+    ].each do |expression|
+      it "retains the dynamic path for #{expression.inspect}" do
+        # anything that's not a simple literal attribute needs a runtime Haml::Attributes object
+        code = Haml.compile("%p{title: #{expression}}", "x", "io", Haml::Options.new(source_locations: false))
+        code.should contain("Attributes.new")
+        code.should contain(expression)
+      end
+    end
+
+    it "keeps the entire attribute list dynamic when one value is unknown" do
+      code = Haml.compile(%q|%p.base{title: "hi", hidden: flag}|)
+      code.should contain("Attributes.new")
+      code.scan(/\.add\(/).size.should eq(3)
+    end
+
+    it "keeps splats dynamic even alongside recognized literals" do
+      code = Haml.compile(%q|%p{title: "hi", **attrs}|)
+      code.should contain("Attributes.new")
+      code.should contain(".add_all(")
+    end
+  end
+
   it "does not eval even apparently constant Crystal expressions" do
     code = Haml.compile(%q|%p{title: raise("must not execute during generation")}|)
     code.should contain("must not execute during generation")

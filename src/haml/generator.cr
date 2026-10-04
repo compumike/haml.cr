@@ -140,17 +140,116 @@ module Haml
       attributes.all? { |attr| attr.kind.text? && attr.segments.none?(&.dynamic?) }
     end
 
+    private def static_attributes(attributes : Array(AST::Attribute)) : Runtime::Attributes?
+      # Returns a Runtime::Attributes object if all the attributes are simple literals that are known at compile time.
+      # Otherwise returns nil.
+      #
+      # Reuse runtime normalization for merging, omission, booleans, and escaping.
+      # Any unknown value (or a non-simple value) keeps the whole list on the runtime-evaluated path.
+      writer = Runtime::Attributes.new
+      attributes.each do |attr|
+        if attr.kind.text? && attr.segments.none?(&.dynamic?)
+          writer.add(attr.name, attr.segments.map(&.text).join)
+        elsif attr.kind.expression? && (value = static_literal(attr.expression.source))
+          writer.add(attr.name, value[0])
+        else
+          return nil
+        end
+      end
+      writer
+    end
+
+    private def static_literal(source : String) : Tuple(String | Bool | Nil)?
+      # Returns a one-element tuple with the static literal value if the source is a simple literal that is known at compile time.
+      # Otherwise returns nil.
+      #
+      # For example:
+      #   static_literal("nil") => {nil}
+      #   static_literal("true") => {true}
+      #   static_literal("false") => {false}
+      #   static_literal("42") => {"42"}
+      #   static_literal("\"hello\"") => {"hello"}
+      #   static_literal("'hello'") => {"hello"}
+      #   static_literal("'hello'") => {"hello"}
+      # The one-element tuple is used to distinguish a recognized nil from unknown syntax.
+      #
+      # We never evaluate Crystal code. We recognize only a small, simple, complete literal.
+      # Fortunately these are quite common in Haml templates.
+      # If we can't handle it at compile time here, we'll safely fall back and evaluate it at runtime.
+
+      source = source.strip
+      case source
+      when "nil"   then return {nil}
+      when "true"  then return {true}
+      when "false" then return {false}
+      end
+
+      # Normalize decimal integers to their runtime literal string.
+      # Leave prefixes, suffixes, separators, leading zeros, and out-of-range values to Crystal.
+      if source.matches?(/\A[+-]?(?:0|[1-9][0-9]*)\z/)
+        if integer = source.to_i64?
+          return {integer.to_s}
+        end
+      end
+
+      # Catch simple string literals that are known at compile time.
+      if string = static_string(source)
+        return {string}
+      end
+      nil
+    end
+
+    private def static_string(source : String) : String?
+      # Returns the string literal if the source is a simple string literal that is known at compile time.
+      # Otherwise returns nil.
+      #
+      # For example:
+      #   static_string("\"hello world\"") => "hello world"
+      #   static_string("\"needs interpolation #{2+2}\"") => nil
+      #
+      # Decode common escapes only.
+      # Unsupported escapes and even escaped interpolation markers conservatively retain native Crystal handling.
+
+      # Must be a double-quoted string literal.
+      return nil unless source.starts_with?('"') && source.ends_with?('"') && source.size >= 2
+
+      # Must not contain newlines or interpolation markers.
+      return nil if source.includes?('\n') || source.includes?('\r') || source.includes?("\#{")
+
+      buffer = IO::Memory.new
+      escaped = false
+      source[1...-1].each_char do |char|
+        if escaped
+          case char
+          when 'n'       then buffer << '\n'
+          when 'r'       then buffer << '\r'
+          when 't'       then buffer << '\t'
+          when '\\', '"' then buffer << char
+          else
+            return nil # don't attempt to handle any other escapes at compile time
+          end
+          escaped = false
+        elsif char == '\\'
+          escaped = true
+        elsif char == '"'
+          # An interior unescaped quote means this is more than one literal.
+          return nil
+        else
+          buffer << char
+        end
+      end
+      return nil if escaped # unterminated string literal?
+      buffer.to_s
+    end
+
     private def attributes(attributes : Array(AST::Attribute), io_name : String) : Nil
       return if attributes.empty?
-      if all_static?(attributes)
-        # Constant HTML-style attributes and shorthand can be normalized during
-        # generation. Hash-style strings remain opaque Crystal expressions;
-        # we do not eval them to chase a small optimization.
-        writer = Runtime::Attributes.new
-        attributes.each { |attr| writer.add(attr.name, attr.segments.map(&.text).join) }
+      if writer = static_attributes(attributes)
+        # If all the attributes are simple literals that are known at compile time, we don't need a runtime Haml::Attributes object, so we can just write the attributes string directly
         literal(String.build { |io| writer.write_to(io) })
         return
       end
+
       flush(io_name)
       writer = temporary
       @code << writer << " = ::Haml::Runtime::Attributes.new\n"

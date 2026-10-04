@@ -555,4 +555,11 @@ describe "compiled Haml rendering" do
     actual = Haml.render "spec/fixtures/render/090.haml"
     actual.should eq("<p><b>A</b><b>B</b></p>\n")
   end
+
+  it "renders precomputed Crystal literal attributes with runtime normalization" do
+    actual = Haml.render "spec/fixtures/render/static_literal_attributes.haml"
+    actual.should eq("<p id=\"me\" class=\"base extra\" title=\"café &amp; &quot;猫&quot;\\\n\r\t\" count=\"42\" negative=\"-42\" zero=\"0\"></p>\n" +
+                     "<input disabled required>\n" +
+                     "<p title=\"false\" aria-hidden=\"false\" data-ready=\"true\"></p>\n")
+  end
 end
