@@ -61,6 +61,39 @@ describe Haml::Runtime do
     end
   end
 
+  describe ".valid_attribute_name?" do
+    it "allows normal ascii alphanumeric characters" do
+      Haml::Runtime.valid_attribute_name?("title").should be_true
+      Haml::Runtime.valid_attribute_name?("TITLE").should be_true
+      Haml::Runtime.valid_attribute_name?("Title").should be_true
+      Haml::Runtime.valid_attribute_name?("title-123").should be_true
+      Haml::Runtime.valid_attribute_name?("TITLE-123").should be_true
+      Haml::Runtime.valid_attribute_name?("Title-123").should be_true
+    end
+
+    it "rejects blank or whitespace-only names" do
+      Haml::Runtime.valid_attribute_name?("").should be_false
+      Haml::Runtime.valid_attribute_name?(" ").should be_false
+    end
+
+    it "rejects names with whitespace" do
+      Haml::Runtime.valid_attribute_name?("title ").should be_false
+      Haml::Runtime.valid_attribute_name?(" title").should be_false
+      Haml::Runtime.valid_attribute_name?("ti tle").should be_false
+    end
+
+    it "rejects names with forbidden characters" do
+      Haml::Runtime.valid_attribute_name?("title\"").should be_false
+      Haml::Runtime.valid_attribute_name?("title'").should be_false
+      Haml::Runtime.valid_attribute_name?("title<").should be_false
+      Haml::Runtime.valid_attribute_name?("title>").should be_false
+      Haml::Runtime.valid_attribute_name?("title/").should be_false
+      Haml::Runtime.valid_attribute_name?("title=").should be_false
+      Haml::Runtime.valid_attribute_name?("title\u0000").should be_false
+      Haml::Runtime.valid_attribute_name?("title\u007f").should be_false
+    end
+  end
+
   describe ".write_preserved" do
     it "preserves newlines after, not before, escaping" do
       String.build { |io| Haml::Runtime.write_preserved(io, "<x>\r\ny\n") }.should eq("&lt;x&gt;&#10;y&#10;")

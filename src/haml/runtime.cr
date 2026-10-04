@@ -103,7 +103,11 @@ module Haml
       # to authored names and keys from a dynamic attribute splat.
       return false if name.empty?
       name.each_char do |char|
-        return false if char.ord <= 32 || char.ord == 127 || "\"'<>/=\u0000".includes?(char)
+        ord : Int32 = char.ord
+        return false if ord <= 32  # space and control characters
+        return false if ord == 127 # DEL character
+        # Characters that may break attribute parsing:
+        return false if char == '"' || char == '\'' || char == '<' || char == '>' || char == '/' || char == '='
       end
       true
     end
